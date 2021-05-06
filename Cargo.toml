@@ -1,6 +1,6 @@
 [package]
 name = "neos-tracking-pixel"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Michael Ripley <zkxs00@gmail.com>"]
 edition = "2018"
 
@@ -10,3 +10,4 @@ edition = "2018"
 tokio = { version = "^1.1.0", features = ["full"] }
 warp = "~0.3.0" # uses tokio 1.0
 png = "~0.16.0"
+chrono = "~0.4.0"

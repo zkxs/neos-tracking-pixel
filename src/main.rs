@@ -1,12 +1,13 @@
 use std::io::Cursor;
 use std::net::{IpAddr, SocketAddr};
 
+use chrono::Utc;
 use warp::Filter;
 use warp::http::{Response, StatusCode};
 
 #[tokio::main]
 async fn main() {
-    println!("Initializing {} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
+    println!("[{}] Initializing {} {}", Utc::now().to_rfc3339(), env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
 
     let server_address: SocketAddr = ([0, 0, 0, 0], 3033).into();
 
@@ -22,7 +23,7 @@ async fn main() {
     let routes = info
         .or(tracking_pixel);
 
-    println!("Starting web server...");
+    println!("[{}] Starting web server on {}...", Utc::now().to_rfc3339(), server_address);
     warp::serve(routes)
         .run(server_address)
         .await;
@@ -55,14 +56,14 @@ async fn tracking_pixel_handler(_cache_nonce: String, socket_addr: Option<Socket
 }
 
 fn ip_to_image(addr: IpAddr) -> Result<Vec<u8>, png::EncodingError> {
-    println!("got request from {}", addr);
+    println!("[{}] got request from {}", Utc::now().to_rfc3339(), addr);
 
     let mut buffer = Cursor::new(Vec::new());
 
     {
         let width: u32 = match addr {
             IpAddr::V4(_) => 2,
-            IpAddr::V6(_) => 18 // must be >= 16 and a multiple of 3
+            IpAddr::V6(_) => 18, // must be >= 16 and a multiple of 3
         };
 
         let mut encoder = png::Encoder::new(&mut buffer, width, 1);
@@ -76,7 +77,7 @@ fn ip_to_image(addr: IpAddr) -> Result<Vec<u8>, png::EncodingError> {
                 let octets = addr.octets();
                 let data = [
                     octets[0], octets[1], octets[2],
-                    octets[3], 0, 0
+                    octets[3], 0, 0,
                 ];
                 writer.write_image_data(&data)?;
             }
@@ -88,7 +89,7 @@ fn ip_to_image(addr: IpAddr) -> Result<Vec<u8>, png::EncodingError> {
                     octets[6], octets[7], octets[8],
                     octets[9], octets[10], octets[11],
                     octets[12], octets[13], octets[14],
-                    octets[15], octets[0], octets[0],
+                    octets[15], 0, 0,
                 ];
                 writer.write_image_data(&data)?;
             }
