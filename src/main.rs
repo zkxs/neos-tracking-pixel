@@ -1,13 +1,13 @@
 use std::io::Cursor;
 use std::net::{IpAddr, SocketAddr};
 
-use chrono::Utc;
+use chrono::{Utc, SecondsFormat};
 use warp::Filter;
 use warp::http::{Response, StatusCode};
 
 #[tokio::main]
 async fn main() {
-    println!("[{}] Initializing {} {}", Utc::now().to_rfc3339(), env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
+    println!("[{}] Initializing {} {}", iso_string(), env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
 
     let server_address: SocketAddr = ([0, 0, 0, 0], 3033).into();
 
@@ -23,10 +23,14 @@ async fn main() {
     let routes = info
         .or(tracking_pixel);
 
-    println!("[{}] Starting web server on {}...", Utc::now().to_rfc3339(), server_address);
+    println!("[{}] Starting web server on {}...", iso_string(), server_address);
     warp::serve(routes)
         .run(server_address)
         .await;
+}
+
+fn iso_string() -> String {
+    Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true)
 }
 
 async fn tracking_pixel_handler(_cache_nonce: String, socket_addr: Option<SocketAddr>) -> Result<impl warp::Reply, warp::Rejection> {
@@ -44,7 +48,7 @@ async fn tracking_pixel_handler(_cache_nonce: String, socket_addr: Option<Socket
             )
         }
         Err(e) => {
-            eprintln!("{}", e);
+            eprintln!("[{}] {}", iso_string(), e);
             Ok(
                 Response::builder()
                     .status(StatusCode::INTERNAL_SERVER_ERROR)
@@ -56,14 +60,14 @@ async fn tracking_pixel_handler(_cache_nonce: String, socket_addr: Option<Socket
 }
 
 fn ip_to_image(addr: IpAddr) -> Result<Vec<u8>, png::EncodingError> {
-    println!("[{}] got request from {}", Utc::now().to_rfc3339(), addr);
+    println!("[{}] got request from {}", iso_string(), addr);
 
     let mut buffer = Cursor::new(Vec::new());
 
     {
         let width: u32 = match addr {
-            IpAddr::V4(_) => 2,
-            IpAddr::V6(_) => 18, // must be >= 16 and a multiple of 3
+            IpAddr::V4(_) => 2, // 2 * 3 = 6, which is enough for 4 bytes
+            IpAddr::V6(_) => 6, // 6 * 3 = 18, which is enough for 16 bytes
         };
 
         let mut encoder = png::Encoder::new(&mut buffer, width, 1);

@@ -1,6 +1,6 @@
 [package]
 name = "neos-tracking-pixel"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Michael Ripley <zkxs00@gmail.com>"]
 edition = "2018"
 
